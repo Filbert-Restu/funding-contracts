@@ -29,7 +29,7 @@ contract CrowdFund is ReentrancyGuard, Ownable {
         uint256 targetAmount;
         uint256 deadline;
         uint256 amountCollected;
-        unit256 totalRefunded; // Total uang yang sudah di-refund ke donatur
+        uint totalRefunded; // Total uang yang sudah di-refund ke donatur
         uint256 totalVotesWeight; // Total uang dari donatur yang setuju withdraw
         bool claimed;
         bool refundActive;
