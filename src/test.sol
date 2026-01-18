@@ -10,8 +10,8 @@ contract CrowdFund is ReentrancyGuard, Ownable {
 
     // --- KONFIGURASI ---
     // 1. Minimal Donasi 10.000 (Asumsi IDRX punya 18 desimal)
-    uint256 public constant MIN_DONATION = 10_000 * 10**18; 
-    
+    uint256 public constant MIN_DONATION = 10_000 * 10 ** 18;
+
     // 2. Batas Waktu Refund (1 Bulan = 30 Hari setelah deadline)
     uint256 public constant REFUND_DELAY = 30 days;
 
@@ -37,10 +37,10 @@ contract CrowdFund is ReentrancyGuard, Ownable {
     }
 
     mapping(uint256 => Campaign) public campaigns;
-    
+
     // Mapping: ID Campaign => Wallet Donatur => Jumlah Donasi
     mapping(uint256 => mapping(address => uint256)) public contributions;
-    
+
     // Mapping: ID Campaign => Wallet Donatur => Sudah Vote?
     mapping(uint256 => mapping(address => bool)) public hasVoted;
 
@@ -64,11 +64,7 @@ contract CrowdFund is ReentrancyGuard, Ownable {
         platformFeePercent = _percent;
     }
 
-    function createCampaign(
-        address _beneficiary, 
-        uint256 _targetAmount, 
-        uint256 _durationInDays
-    ) public onlyOwner {
+    function createCampaign(address _beneficiary, uint256 _targetAmount, uint256 _durationInDays) public onlyOwner {
         require(_targetAmount > 0, "Target 0");
         require(_durationInDays > 0, "Durasi 0");
         require(_beneficiary != address(0), "Alamat tidak valid");
@@ -93,7 +89,7 @@ contract CrowdFund is ReentrancyGuard, Ownable {
     function donateToCampaign(uint256 _id, uint256 _amount) public nonReentrant {
         Campaign storage campaign = campaigns[_id];
         require(block.timestamp < campaign.deadline, "Kampanye berakhir");
-        
+
         // Syarat Minimal
         require(_amount >= MIN_DONATION, "Minimal donasi 10.000 IDRX");
 
@@ -101,18 +97,18 @@ contract CrowdFund is ReentrancyGuard, Ownable {
         require(success, "Gagal transfer token");
 
         campaign.amountCollected += _amount;
-        
+
         // Catat kontribusi user untuk refund & voting
         contributions[_id][msg.sender] += _amount;
 
         emit DonationReceived(_id, msg.sender, _amount);
     }
 
-   // --- LOGIKA 2: REFUND OLEH DONATUR ---
+    // --- LOGIKA 2: REFUND OLEH DONATUR ---
     // Jika Creator tidak menarik dana 1 bulan setelah deadline
-function claimRefund(uint256 _id) external nonReentrant {
+    function claimRefund(uint256 _id) external nonReentrant {
         Campaign storage campaign = campaigns[_id];
-        
+
         // 1. CHECKS (Validasi)
         require(!campaign.claimed, "Dana sudah ditarik creator");
         require(block.timestamp > (campaign.deadline + REFUND_DELAY), "Belum masa refund");
@@ -126,7 +122,7 @@ function claimRefund(uint256 _id) external nonReentrant {
 
         // Update total refund untuk keperluan Admin Sweep nanti
         campaign.totalRefunded += userContribution;
-        
+
         // Tandai status refund aktif
         campaign.refundActive = true;
 
@@ -134,14 +130,14 @@ function claimRefund(uint256 _id) external nonReentrant {
         // Lakukan transfer HANYA SATU KALI di akhir
         bool success = donationToken.transfer(msg.sender, userContribution);
         require(success, "Gagal refund");
-        
+
         emit RefundClaimed(_id, msg.sender, userContribution);
     }
 
     // --- LOGIKA 3: ADMIN SWEEP ---
     function adminSweep(uint256 _id) external onlyOwner nonReentrant {
         Campaign storage campaign = campaigns[_id];
-        
+
         // 1. CHECKS (Validasi)
         require(!campaign.claimed, "Dana sudah ditarik/disapu");
 
@@ -156,7 +152,7 @@ function claimRefund(uint256 _id) external nonReentrant {
 
         // 3. EFFECTS (Update Data Dulu)
         // Menandai claimed = true akan otomatis mematikan fitur 'claimRefund' bagi user yang telat.
-        campaign.claimed = true; 
+        campaign.claimed = true;
 
         // 4. INTERACTIONS (Transfer)
         bool success = donationToken.transfer(owner(), remainingFunds);
@@ -211,6 +207,4 @@ function claimRefund(uint256 _id) external nonReentrant {
 
         emit FundsClaimed(_id, msg.sender, creatorAmount, feeAmount);
     }
-
- 
 }

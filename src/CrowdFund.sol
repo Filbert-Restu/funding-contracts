@@ -11,7 +11,7 @@ contract CrowdFund is ReentrancyGuard, Ownable {
     IERC20 public donationToken;
 
     struct Campaign {
-        address owner;          // Pemilik Proyek (User)
+        address owner; // Pemilik Proyek (User)
         uint256 targetAmount;
         uint256 deadline;
         uint256 amountCollected;
@@ -33,11 +33,15 @@ contract CrowdFund is ReentrancyGuard, Ownable {
 
     // 4. Perubahan Utama di Fungsi Create
     function createCampaign(
-        address _beneficiary,   // Alamat Wallet User (Pemilik Proyek)
-        uint256 _targetAmount, 
+        address _beneficiary, // Alamat Wallet User (Pemilik Proyek)
+        uint256 _targetAmount,
         uint256 _durationInDays
-    ) public onlyOwner { // HANYA ADMIN YANG BISA PANGGIL
-        
+    )
+        public
+        onlyOwner
+    {
+        // HANYA ADMIN YANG BISA PANGGIL
+
         require(_targetAmount > 0, "Target 0");
         require(_durationInDays > 0, "Durasi 0");
         require(_beneficiary != address(0), "Alamat tidak valid");
@@ -46,10 +50,10 @@ contract CrowdFund is ReentrancyGuard, Ownable {
         uint256 deadlineDate = block.timestamp + (_durationInDays * 1 days);
 
         Campaign storage campaign = campaigns[campaignId];
-        
+
         // Pemiliknya adalah Beneficiary, BUKAN msg.sender (Admin)
-        campaign.owner = _beneficiary; 
-        
+        campaign.owner = _beneficiary;
+
         campaign.targetAmount = _targetAmount;
         campaign.deadline = deadlineDate;
         campaign.amountCollected = 0;
@@ -76,18 +80,18 @@ contract CrowdFund is ReentrancyGuard, Ownable {
     // Fungsi Withdraw tetap sama (Hanya Beneficiary yang bisa tarik)
     function withdraw(uint256 _id) public nonReentrant {
         Campaign storage campaign = campaigns[_id];
-        
+
         // Pengecekan: Yang tarik harus User asli, bukan Admin
-        require(msg.sender == campaign.owner, "Bukan pemilik asli"); 
+        require(msg.sender == campaign.owner, "Bukan pemilik asli");
         require(!campaign.claimed, "Sudah ditarik");
 
         uint256 collected = campaign.amountCollected;
         campaign.claimed = true;
-        campaign.amountCollected = 0; 
+        campaign.amountCollected = 0;
 
         bool success = donationToken.transfer(campaign.owner, collected);
         require(success, "Gagal transfer token");
-        
+
         emit FundsClaimed(_id, msg.sender, collected);
     }
 
